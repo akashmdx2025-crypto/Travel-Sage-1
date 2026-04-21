@@ -5,18 +5,34 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import type {
+  MutationFunction,
   QueryFunction,
   QueryKey,
+  UseMutationOptions,
+  UseMutationResult,
   UseQueryOptions,
   UseQueryResult,
 } from "@tanstack/react-query";
 
-import type { HealthStatus } from "./api.schemas";
+import type {
+  BudgetResult,
+  ChatRequest,
+  ChatResult,
+  GeneratorRequest,
+  HealthStatus,
+  ItineraryRequest,
+  ItineraryResult,
+  LogsResult,
+  PackingResult,
+  TipsResult,
+  UploadTravelGuideRequest,
+  UploadTravelGuideResult,
+} from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
-import type { ErrorType } from "../custom-fetch";
+import type { ErrorType, BodyType } from "../custom-fetch";
 
 type AwaitedInput<T> = PromiseLike<T> | T;
 
@@ -92,6 +108,587 @@ export function useHealthCheck<
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getHealthCheckQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Upload and process a travel document
+ */
+export const getUploadTravelGuideUrl = () => {
+  return `/api/travelsage/upload`;
+};
+
+export const uploadTravelGuide = async (
+  uploadTravelGuideRequest: UploadTravelGuideRequest,
+  options?: RequestInit,
+): Promise<UploadTravelGuideResult> => {
+  return customFetch<UploadTravelGuideResult>(getUploadTravelGuideUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(uploadTravelGuideRequest),
+  });
+};
+
+export const getUploadTravelGuideMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof uploadTravelGuide>>,
+    TError,
+    { data: BodyType<UploadTravelGuideRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof uploadTravelGuide>>,
+  TError,
+  { data: BodyType<UploadTravelGuideRequest> },
+  TContext
+> => {
+  const mutationKey = ["uploadTravelGuide"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof uploadTravelGuide>>,
+    { data: BodyType<UploadTravelGuideRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return uploadTravelGuide(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UploadTravelGuideMutationResult = NonNullable<
+  Awaited<ReturnType<typeof uploadTravelGuide>>
+>;
+export type UploadTravelGuideMutationBody = BodyType<UploadTravelGuideRequest>;
+export type UploadTravelGuideMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Upload and process a travel document
+ */
+export const useUploadTravelGuide = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof uploadTravelGuide>>,
+    TError,
+    { data: BodyType<UploadTravelGuideRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof uploadTravelGuide>>,
+  TError,
+  { data: BodyType<UploadTravelGuideRequest> },
+  TContext
+> => {
+  return useMutation(getUploadTravelGuideMutationOptions(options));
+};
+
+/**
+ * @summary Ask a grounded destination question
+ */
+export const getChatWithTravelSageUrl = () => {
+  return `/api/travelsage/chat`;
+};
+
+export const chatWithTravelSage = async (
+  chatRequest: ChatRequest,
+  options?: RequestInit,
+): Promise<ChatResult> => {
+  return customFetch<ChatResult>(getChatWithTravelSageUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(chatRequest),
+  });
+};
+
+export const getChatWithTravelSageMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof chatWithTravelSage>>,
+    TError,
+    { data: BodyType<ChatRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof chatWithTravelSage>>,
+  TError,
+  { data: BodyType<ChatRequest> },
+  TContext
+> => {
+  const mutationKey = ["chatWithTravelSage"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof chatWithTravelSage>>,
+    { data: BodyType<ChatRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return chatWithTravelSage(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ChatWithTravelSageMutationResult = NonNullable<
+  Awaited<ReturnType<typeof chatWithTravelSage>>
+>;
+export type ChatWithTravelSageMutationBody = BodyType<ChatRequest>;
+export type ChatWithTravelSageMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Ask a grounded destination question
+ */
+export const useChatWithTravelSage = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof chatWithTravelSage>>,
+    TError,
+    { data: BodyType<ChatRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof chatWithTravelSage>>,
+  TError,
+  { data: BodyType<ChatRequest> },
+  TContext
+> => {
+  return useMutation(getChatWithTravelSageMutationOptions(options));
+};
+
+/**
+ * @summary Generate a grounded itinerary
+ */
+export const getGenerateItineraryUrl = () => {
+  return `/api/travelsage/generate-itinerary`;
+};
+
+export const generateItinerary = async (
+  itineraryRequest: ItineraryRequest,
+  options?: RequestInit,
+): Promise<ItineraryResult> => {
+  return customFetch<ItineraryResult>(getGenerateItineraryUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(itineraryRequest),
+  });
+};
+
+export const getGenerateItineraryMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof generateItinerary>>,
+    TError,
+    { data: BodyType<ItineraryRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof generateItinerary>>,
+  TError,
+  { data: BodyType<ItineraryRequest> },
+  TContext
+> => {
+  const mutationKey = ["generateItinerary"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof generateItinerary>>,
+    { data: BodyType<ItineraryRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return generateItinerary(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type GenerateItineraryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof generateItinerary>>
+>;
+export type GenerateItineraryMutationBody = BodyType<ItineraryRequest>;
+export type GenerateItineraryMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Generate a grounded itinerary
+ */
+export const useGenerateItinerary = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof generateItinerary>>,
+    TError,
+    { data: BodyType<ItineraryRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof generateItinerary>>,
+  TError,
+  { data: BodyType<ItineraryRequest> },
+  TContext
+> => {
+  return useMutation(getGenerateItineraryMutationOptions(options));
+};
+
+/**
+ * @summary Generate a grounded packing list
+ */
+export const getGeneratePackingListUrl = () => {
+  return `/api/travelsage/generate-packing`;
+};
+
+export const generatePackingList = async (
+  generatorRequest: GeneratorRequest,
+  options?: RequestInit,
+): Promise<PackingResult> => {
+  return customFetch<PackingResult>(getGeneratePackingListUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(generatorRequest),
+  });
+};
+
+export const getGeneratePackingListMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof generatePackingList>>,
+    TError,
+    { data: BodyType<GeneratorRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof generatePackingList>>,
+  TError,
+  { data: BodyType<GeneratorRequest> },
+  TContext
+> => {
+  const mutationKey = ["generatePackingList"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof generatePackingList>>,
+    { data: BodyType<GeneratorRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return generatePackingList(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type GeneratePackingListMutationResult = NonNullable<
+  Awaited<ReturnType<typeof generatePackingList>>
+>;
+export type GeneratePackingListMutationBody = BodyType<GeneratorRequest>;
+export type GeneratePackingListMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Generate a grounded packing list
+ */
+export const useGeneratePackingList = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof generatePackingList>>,
+    TError,
+    { data: BodyType<GeneratorRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof generatePackingList>>,
+  TError,
+  { data: BodyType<GeneratorRequest> },
+  TContext
+> => {
+  return useMutation(getGeneratePackingListMutationOptions(options));
+};
+
+/**
+ * @summary Generate a grounded trip budget
+ */
+export const getGenerateBudgetUrl = () => {
+  return `/api/travelsage/generate-budget`;
+};
+
+export const generateBudget = async (
+  generatorRequest: GeneratorRequest,
+  options?: RequestInit,
+): Promise<BudgetResult> => {
+  return customFetch<BudgetResult>(getGenerateBudgetUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(generatorRequest),
+  });
+};
+
+export const getGenerateBudgetMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof generateBudget>>,
+    TError,
+    { data: BodyType<GeneratorRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof generateBudget>>,
+  TError,
+  { data: BodyType<GeneratorRequest> },
+  TContext
+> => {
+  const mutationKey = ["generateBudget"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof generateBudget>>,
+    { data: BodyType<GeneratorRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return generateBudget(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type GenerateBudgetMutationResult = NonNullable<
+  Awaited<ReturnType<typeof generateBudget>>
+>;
+export type GenerateBudgetMutationBody = BodyType<GeneratorRequest>;
+export type GenerateBudgetMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Generate a grounded trip budget
+ */
+export const useGenerateBudget = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof generateBudget>>,
+    TError,
+    { data: BodyType<GeneratorRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof generateBudget>>,
+  TError,
+  { data: BodyType<GeneratorRequest> },
+  TContext
+> => {
+  return useMutation(getGenerateBudgetMutationOptions(options));
+};
+
+/**
+ * @summary Generate grounded destination tips
+ */
+export const getGenerateTipsUrl = () => {
+  return `/api/travelsage/generate-tips`;
+};
+
+export const generateTips = async (
+  generatorRequest: GeneratorRequest,
+  options?: RequestInit,
+): Promise<TipsResult> => {
+  return customFetch<TipsResult>(getGenerateTipsUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(generatorRequest),
+  });
+};
+
+export const getGenerateTipsMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof generateTips>>,
+    TError,
+    { data: BodyType<GeneratorRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof generateTips>>,
+  TError,
+  { data: BodyType<GeneratorRequest> },
+  TContext
+> => {
+  const mutationKey = ["generateTips"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof generateTips>>,
+    { data: BodyType<GeneratorRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return generateTips(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type GenerateTipsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof generateTips>>
+>;
+export type GenerateTipsMutationBody = BodyType<GeneratorRequest>;
+export type GenerateTipsMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Generate grounded destination tips
+ */
+export const useGenerateTips = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof generateTips>>,
+    TError,
+    { data: BodyType<GeneratorRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof generateTips>>,
+  TError,
+  { data: BodyType<GeneratorRequest> },
+  TContext
+> => {
+  return useMutation(getGenerateTipsMutationOptions(options));
+};
+
+/**
+ * @summary Retrieve AI transparency logs
+ */
+export const getGetAiLogsUrl = () => {
+  return `/api/travelsage/logs`;
+};
+
+export const getAiLogs = async (options?: RequestInit): Promise<LogsResult> => {
+  return customFetch<LogsResult>(getGetAiLogsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetAiLogsQueryKey = () => {
+  return [`/api/travelsage/logs`] as const;
+};
+
+export const getGetAiLogsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getAiLogs>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<Awaited<ReturnType<typeof getAiLogs>>, TError, TData>;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetAiLogsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getAiLogs>>> = ({
+    signal,
+  }) => getAiLogs({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getAiLogs>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetAiLogsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getAiLogs>>
+>;
+export type GetAiLogsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Retrieve AI transparency logs
+ */
+
+export function useGetAiLogs<
+  TData = Awaited<ReturnType<typeof getAiLogs>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<Awaited<ReturnType<typeof getAiLogs>>, TError, TData>;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetAiLogsQueryOptions(options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

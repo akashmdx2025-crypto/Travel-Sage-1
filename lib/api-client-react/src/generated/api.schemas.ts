@@ -8,3 +8,136 @@
 export interface HealthStatus {
   status: string;
 }
+
+export interface SourceChunk {
+  id: string;
+  text: string;
+  similarity: number;
+}
+
+export interface DestinationAnalysis {
+  destinationName: string;
+  country: string;
+  flagEmoji: string;
+  attractions: string[];
+  restaurants: string[];
+  activities: string[];
+  priceRanges: string[];
+  climate: string;
+  culturalNotes: string[];
+  summary: string;
+}
+
+export interface UploadTravelGuideRequest {
+  fileName: string;
+  mimeType?: string;
+  contentBase64?: string;
+  pastedText?: string;
+}
+
+export type UploadTravelGuideResultHighlights = {
+  places: string[];
+  prices: string[];
+  activities: string[];
+};
+
+export interface UploadTravelGuideResult {
+  documentId: string;
+  fileName: string;
+  textPreview: string;
+  chunkCount: number;
+  wordCount: number;
+  analysis: DestinationAnalysis;
+  highlights: UploadTravelGuideResultHighlights;
+}
+
+export interface ChatRequest {
+  documentId: string;
+  question: string;
+}
+
+export type ChatResultGuardrail = {
+  passed: boolean;
+  reason: string;
+};
+
+export interface ChatResult {
+  answer: string;
+  sources: SourceChunk[];
+  guardrail: ChatResultGuardrail;
+}
+
+export interface ItineraryRequest {
+  documentId: string;
+  /**
+   * @minimum 1
+   * @maximum 14
+   */
+  days: number;
+  style: string;
+  interests: string[];
+}
+
+export interface GeneratorRequest {
+  documentId: string;
+}
+
+export interface ItineraryDay {
+  day: number;
+  title: string;
+  morning: string[];
+  afternoon: string[];
+  evening: string[];
+  estimatedCost: string;
+}
+
+export interface ItineraryResult {
+  days: ItineraryDay[];
+  sources: SourceChunk[];
+}
+
+export interface PackingCategory {
+  category: string;
+  items: string[];
+}
+
+export interface PackingResult {
+  categories: PackingCategory[];
+  sources: SourceChunk[];
+}
+
+export interface BudgetItem {
+  category: string;
+  estimate: string;
+  notes: string;
+}
+
+export interface BudgetResult {
+  items: BudgetItem[];
+  totalGuidance: string;
+  sources: SourceChunk[];
+}
+
+export interface TipsResult {
+  safety: string[];
+  culture: string[];
+  practical: string[];
+  sources: SourceChunk[];
+}
+
+export interface AiLogEntry {
+  id: string;
+  timestamp: string;
+  endpoint: string;
+  model: string;
+  promptTokens: number;
+  completionTokens: number;
+  latencyMs: number;
+  guardrailPassed: boolean;
+  qualityScore: number;
+  notes: string;
+}
+
+export interface LogsResult {
+  logs: AiLogEntry[];
+}

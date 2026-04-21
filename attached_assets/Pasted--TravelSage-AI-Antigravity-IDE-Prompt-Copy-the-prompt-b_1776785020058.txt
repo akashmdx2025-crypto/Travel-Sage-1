@@ -1,0 +1,1046 @@
+# TravelSage AI — Antigravity IDE Prompt
+
+Copy the prompt below and paste it into Antigravity's Agent Manager.
+
+---
+
+## PROMPT (COPY EVERYTHING BELOW THIS LINE)
+
+---
+
+Build a full-stack web application called **TravelSage AI** — an AI-powered trip planner that transforms uploaded travel guides, destination documents, and itineraries into a personalized, interactive travel planning experience with AI-generated itineraries, packing lists, budget estimates, and a destination-expert chatbot.
+
+This is a university hackathon project for a Generative AI module (CST4625). It MUST demonstrate these 6 AI/GenAI concepts clearly:
+1. **Constrained Prompting** — structured system prompts with strict rules, output format constraints, and JSON schemas for itineraries, budgets, and packing lists
+2. **RAG (Retrieval-Augmented Generation)** — chunking uploaded travel guides / destination PDFs, embedding them, retrieving relevant chunks to ground AI responses in the actual uploaded content
+3. **Guardrails** — the AI must REFUSE to answer questions unrelated to the uploaded destination/travel material, block prompt injection, and validate that all recommendations are grounded in the uploaded docs
+4. **Evaluation / Logging** — log every AI call with timestamps, token counts, latency, guardrail pass/fail, and quality scores
+5. **Multimodal Input** — accept PDF and plain text uploads for travel guides, brochures, Lonely Planet excerpts, blog posts, and itineraries
+6. **Deployment-ready** — optimized for Vercel or Railway deployment
+
+---
+
+### TECH STACK (mandatory)
+
+- **Framework**: Next.js 14+ (App Router)
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **UI Library**: shadcn/ui components
+- **AI**: OpenAI API (gpt-4o-mini model for cost efficiency)
+- **Vector Store**: In-memory vector store using OpenAI embeddings (text-embedding-3-small) — no external database needed
+- **PDF Parsing**: pdf-parse library
+- **Deployment**: Vercel or Railway
+
+---
+
+### PROJECT STRUCTURE
+
+```
+travelsage-ai/
+├── app/
+│   ├── layout.tsx                 # Root layout with fonts, metadata
+│   ├── page.tsx                   # Landing/home page
+│   ├── globals.css                # Global styles + Tailwind
+│   ├── planner/
+│   │   └── page.tsx               # Main trip planner workspace
+│   └── api/
+│       ├── upload/
+│       │   └── route.ts           # POST: upload & process travel guide
+│       ├── chat/
+│       │   └── route.ts           # POST: RAG-powered destination expert chat
+│       ├── generate-itinerary/
+│       │   └── route.ts           # POST: generate day-by-day itinerary
+│       ├── generate-packing/
+│       │   └── route.ts           # POST: generate smart packing list
+│       ├── generate-budget/
+│       │   └── route.ts           # POST: generate trip budget breakdown
+│       ├── generate-tips/
+│       │   └── route.ts           # POST: generate destination safety & culture tips
+│       └── logs/
+│           └── route.ts           # GET: retrieve AI interaction logs
+├── components/
+│   ├── landing/
+│   │   ├── Hero.tsx               # Hero section with animated world map
+│   │   ├── Features.tsx           # Feature cards grid
+│   │   └── HowItWorks.tsx         # Step-by-step visual guide
+│   ├── planner/
+│   │   ├── FileUpload.tsx         # Drag-and-drop file upload for travel docs
+│   │   ├── DocViewer.tsx          # Shows parsed travel guide with key info highlighted
+│   │   ├── DestinationHeader.tsx  # Detected destination name, country, banner
+│   │   ├── ChatPanel.tsx          # RAG-powered destination expert chat
+│   │   ├── ItineraryPanel.tsx     # AI-generated day-by-day itinerary
+│   │   ├── PackingPanel.tsx       # Smart packing list with categories
+│   │   ├── BudgetPanel.tsx        # Trip budget breakdown with charts
+│   │   ├── TipsPanel.tsx          # Safety, culture, and local tips
+│   │   ├── TabNavigation.tsx      # Tabs: Chat | Itinerary | Packing | Budget | Tips | Logs
+│   │   └── AILogPanel.tsx         # Shows AI interaction logs (eval transparency)
+│   └── ui/                       # shadcn/ui components
+├── lib/
+│   ├── openai.ts                  # OpenAI client setup
+│   ├── vectorstore.ts             # In-memory vector store with cosine similarity
+│   ├── chunker.ts                 # Document chunking logic
+│   ├── prompts.ts                 # All system prompts (centralized)
+│   ├── guardrails.ts              # Guardrail validation logic
+│   ├── logger.ts                  # AI interaction logger
+│   └── types.ts                   # TypeScript interfaces
+├── .env.local                     # OPENAI_API_KEY placeholder
+├── .env.example
+├── package.json
+├── tailwind.config.ts
+├── tsconfig.json
+└── next.config.js
+```
+
+---
+
+### DETAILED FEATURE SPECIFICATIONS
+
+#### 1. LANDING PAGE (app/page.tsx)
+
+Design a visually stunning, immersive dark-themed landing page with a travel/exploration aesthetic:
+
+- **Hero Section**:
+  - Large headline: "Your AI Travel Companion That Actually Reads the Guidebook"
+  - Subtext: "Upload any travel guide, destination PDF, or trip notes. Get AI-generated itineraries, smart packing lists, budget breakdowns, and a destination expert that only answers from YOUR material."
+  - CTA button: "Plan My Trip →" linking to /planner
+  - Background: animated gradient mesh (deep midnight blue #0b1120 to warm sunset orange #7c2d12 at 15% opacity to dark teal #042f2e), slowly morphing — evokes a sunset horizon
+  - Decorative: subtle dotted world map outline using CSS/SVG in the background at very low opacity, with a gentle pulsing glow on random cities
+  - Floating glassmorphism cards showing sample itinerary snippets and packing items
+
+- **Features Grid** (3x2):
+  - Card 1: "📄 Upload Any Guide" — "Drop a Lonely Planet PDF, travel blog, or trip notes. We chunk it, embed it, and make it your personal destination database."
+  - Card 2: "🗺️ Smart Itineraries" — "AI generates a day-by-day plan grounded in YOUR guide's recommendations — not generic internet results."
+  - Card 3: "🎒 Packing Intelligence" — "Get a packing list customized to the destination's climate, culture, and activities mentioned in your guide."
+  - Card 4: "💰 Budget Planner" — "AI estimates costs for accommodation, food, transport, and activities based on prices mentioned in your uploaded material."
+  - Card 5: "📊 Full Transparency" — "Every AI call is logged — tokens, latency, quality scores. See exactly how the AI reasons about your trip."
+  - Card 6: "🛡️ Grounded AI" — "The AI refuses to invent attractions or make up prices. Every recommendation traces back to your uploaded guide."
+  - Cards: glassmorphism with warm border glow on hover, scale(1.02) transition, icon with gradient circle background
+
+- **How It Works** (3-step horizontal timeline with connecting dotted line):
+  - Step 1: "Upload" — drop your travel guide PDF or paste destination notes
+  - Step 2: "Plan" — AI generates itineraries, packing lists, budgets from your guide
+  - Step 3: "Explore" — chat with a destination expert grounded in your material
+
+- **Footer**: "Built for CST4625 Generative AI Module | Powered by OpenAI"
+
+- **Design notes**:
+  - Use Geist Sans for body, Geist Mono for costs/stats/numbers
+  - Dark theme: #0a0a0a background
+  - Primary accent: Warm amber/orange #f59e0b (evokes adventure/sunsets)
+  - Secondary accent: Teal #14b8a6 (evokes ocean/exploration)
+  - Tertiary: Soft sky blue #38bdf8 for informational elements
+  - Text primary: #fafafa, secondary: #a1a1aa
+  - Smooth scroll-triggered fade-in animations on all sections
+  - Fully responsive
+
+#### 2. PLANNER WORKSPACE (app/planner/page.tsx)
+
+Main workspace — split-panel layout:
+
+- **Left Panel (35% width)**:
+  - File upload zone (if no guide uploaded yet)
+  - After upload: **Destination Header** showing:
+    - Detected destination name (large, bold)
+    - Country flag emoji + country name
+    - Quick stats: "12 attractions mentioned | 8 restaurants | 5 activities"
+  - Below: parsed guide viewer, scrollable, with smart highlighting:
+    - Place names highlighted in amber pills
+    - Prices/costs highlighted in teal pills
+    - Activities highlighted in blue pills
+  - "Re-upload" button to change guide
+
+- **Right Panel (65% width)**:
+  - Tab navigation: Chat | Itinerary | Packing | Budget | Tips | AI Logs
+  - Each tab renders its respective panel
+  - Active tab: glowing amber underline
+
+- **Layout**:
+  - Full viewport height
+  - Resizable panels with drag handle
+  - Dark theme matching landing page
+
+#### 3. FILE UPLOAD (components/planner/FileUpload.tsx)
+
+- Drag-and-drop zone with dashed border, amber glow on drag-over
+- Accepts: .pdf, .txt, .md files
+- Also: textarea for pasting travel notes directly
+- Max size: 10MB
+- Upload animation: animated airplane icon flying across a progress bar
+- On upload:
+  1. Send to /api/upload
+  2. Extract text (pdf-parse for PDFs, raw for .txt/.md)
+  3. Chunk into ~500 token chunks with 50 token overlap
+  4. Generate embeddings via text-embedding-3-small
+  5. Store chunks + embeddings in memory
+  6. Run a "destination analysis" prompt to extract:
+     - Destination name & country
+     - Key attractions/landmarks mentioned
+     - Restaurants/food mentioned
+     - Activities mentioned
+     - Price ranges mentioned
+     - Climate/weather info
+     - Cultural notes
+  7. Return analysis + stats to frontend
+- Success: animated checkmark + destination banner appears
+
+#### 4. DESTINATION EXPERT CHAT (components/planner/ChatPanel.tsx + api/chat/route.ts)
+
+**Frontend**:
+- Chat bubbles: user right-aligned, AI left-aligned with "🗺️ TravelSage" avatar badge
+- Typing indicator (animated dots)
+- Each AI response shows expandable "Sources from your guide" section
+- Suggested starter prompts:
+  - "What are the must-see places mentioned in my guide?"
+  - "What's the best area to stay according to my guide?"
+  - "Any food recommendations from my guide?"
+  - "What should I know about local customs?"
+  - "How many days does my guide recommend?"
+- Message input + send button
+
+**Backend (api/chat/route.ts)**:
+- Embed user query → find top 3 similar chunks
+- Run guardrails (safety + relevance + scope)
+- System prompt (in lib/prompts.ts):
+
+```
+You are TravelSage AI, a friendly destination expert. You help travelers plan trips based ONLY on their uploaded travel guide or destination material.
+
+Rules:
+1. ONLY provide information, recommendations, and advice that is present in the provided context from the user's uploaded travel guide.
+2. If asked about something not covered in the uploaded material, respond: "I couldn't find information about that in your uploaded guide. Try uploading more material about this destination, or ask me something else about what's covered!"
+3. NEVER invent attractions, restaurants, prices, or activities not mentioned in the context.
+4. NEVER provide made-up opening hours, phone numbers, or addresses unless they appear in the context.
+5. Be enthusiastic and helpful — make the traveler excited about their trip!
+6. Format responses with markdown: use headers for sections, bold for place names, and bullet points for lists.
+7. When mentioning prices, always note they come from the guide and may have changed.
+8. If the guide mentions safety concerns, always include them prominently.
+
+CONTEXT FROM UPLOADED TRAVEL GUIDE:
+{retrieved_chunks}
+
+TRAVELER'S QUESTION:
+{question}
+```
+
+- Log interaction with similarity scores
+
+#### 5. ITINERARY GENERATOR (components/planner/ItineraryPanel.tsx + api/generate-itinerary/route.ts)
+
+**Frontend**:
+- Settings bar:
+  - Trip duration selector: 1-14 days (number input or quick buttons: 3, 5, 7, 10 days)
+  - Travel style selector: "Relaxed" | "Balanced" | "Action-Packed"
+  - Interests multi-select: "Culture" | "Food" | "Nature" | "Nightlife" | "Shopping" | "Adventure"
+- "Generate Itinerary" button
+- Itinerary renders as a vertical timeline:
+  - Each day is a card with:
+    - Day number + title (e.g., "Day 1: Arrival & Old Town")
+    - Morning / Afternoon / Evening sections
+    - Each activity: name (bold), description, estimated duration, estimated cost if available
+    - Small map placeholder showing area (decorative, not functional)
+  - Timeline connector line between day cards (amber gradient)
+  - Expand/collapse individual days
+- "Regenerate" button to get a fresh itinerary
+- "Copy as Text" button
+
+**Backend (api/generate-itinerary/route.ts)**:
+- Retrieve all relevant chunks (use more chunks here — top 8-10)
+- System prompt:
+
+```
+You are TravelSage AI. Generate a detailed day-by-day travel itinerary based ONLY on the uploaded travel guide.
+
+Rules:
+1. ONLY include attractions, restaurants, and activities mentioned in the provided context.
+2. NEVER invent places or activities not in the context.
+3. Organize each day into morning, afternoon, and evening blocks.
+4. Include estimated time at each location (based on context or reasonable defaults).
+5. Include estimated costs where mentioned in the context. If not mentioned, omit costs rather than guessing.
+6. Consider logical geography — group nearby attractions on the same day.
+7. For "{travel_style}" style: {"relaxed" = 2-3 activities/day, "balanced" = 3-4, "action_packed" = 5-6}.
+8. Prioritize the traveler's interests: {interests}.
+9. Include meal suggestions if restaurants are mentioned in the context.
+10. Add brief transition notes between activities ("walk 10 minutes north to...").
+
+Respond in this exact JSON format:
+{
+  "destination": "...",
+  "totalDays": 5,
+  "days": [
+    {
+      "day": 1,
+      "title": "Arrival & Old Town Exploration",
+      "morning": [
+        {
+          "activity": "Visit the Grand Bazaar",
+          "description": "Explore the historic covered market...",
+          "duration": "2 hours",
+          "cost": "$0 (free entry)",
+          "sourceNote": "Mentioned on page 34 of your guide"
+        }
+      ],
+      "afternoon": [...],
+      "evening": [...],
+      "dayTip": "Wear comfortable shoes — lots of walking today!"
+    }
+  ],
+  "totalEstimatedCost": "$450-600",
+  "packingReminder": "Don't forget sunscreen for the outdoor activities on Day 3!"
+}
+
+TRAVEL GUIDE CONTEXT:
+{chunks}
+```
+
+- Log interaction
+
+#### 6. PACKING LIST GENERATOR (components/planner/PackingPanel.tsx + api/generate-packing/route.ts)
+
+**Frontend**:
+- Settings:
+  - Trip duration (auto-filled from itinerary if generated)
+  - Season/month of travel: dropdown (Jan-Dec)
+  - Traveler type: "Solo" | "Couple" | "Family" | "Group"
+- "Generate Packing List" button
+- Packing list renders as categorized checklist:
+  - Categories: Clothing | Toiletries | Electronics | Documents | Destination-Specific | Misc
+  - Each item: checkbox (interactive, tracks completion in state), item name, quantity, note
+  - Destination-specific items highlighted with amber badge (e.g., "Modest clothing for temple visits" if guide mentions temples)
+  - Progress bar: "12/34 items packed"
+- "Copy List" and "Print" buttons
+
+**Backend (api/generate-packing/route.ts)**:
+- System prompt:
+
+```
+Generate a smart packing list for a trip based ONLY on the uploaded travel guide.
+
+Rules:
+1. Include destination-specific items ONLY if mentioned or implied by the guide (e.g., if temples are mentioned, suggest modest clothing; if beaches, suggest swimwear).
+2. Consider the travel month "{month}" for climate-appropriate clothing.
+3. Include standard travel essentials.
+4. Mark items as "destination_specific": true if they're unique to this destination based on the guide.
+5. Do NOT assume activities or requirements not mentioned in the guide.
+6. Include quantities based on "{duration}" days and "{traveler_type}".
+
+Respond in this exact JSON format:
+{
+  "categories": [
+    {
+      "name": "Clothing",
+      "items": [
+        {
+          "item": "Light cotton shirts",
+          "quantity": 5,
+          "note": "Hot climate mentioned in guide",
+          "destination_specific": false
+        },
+        {
+          "item": "Modest scarf/shawl for temple visits",
+          "quantity": 1,
+          "note": "Guide mentions visiting Wat Pho and Grand Palace",
+          "destination_specific": true
+        }
+      ]
+    }
+  ],
+  "totalItems": 34
+}
+
+TRAVEL GUIDE CONTEXT:
+{chunks}
+```
+
+#### 7. BUDGET PLANNER (components/planner/BudgetPanel.tsx + api/generate-budget/route.ts)
+
+**Frontend**:
+- Settings:
+  - Trip duration (auto-filled)
+  - Budget style: "Backpacker" | "Mid-Range" | "Luxury"
+  - Currency selector: dropdown with common currencies (USD, EUR, GBP, INR, etc.)
+  - Number of travelers: 1-6
+- "Generate Budget" button
+- Budget renders as:
+  - Summary card at top: "Estimated Total: $X,XXX" with per-person and per-day breakdown
+  - Category breakdown with horizontal bar chart (use recharts):
+    - Accommodation
+    - Food & Drink
+    - Transportation
+    - Activities & Attractions
+    - Shopping & Souvenirs
+    - Miscellaneous
+  - Each category expandable to show line items with source notes
+  - "Based on prices from your guide — actual costs may vary" disclaimer in amber
+- Donut chart showing percentage split (use recharts)
+
+**Backend (api/generate-budget/route.ts)**:
+- System prompt:
+
+```
+Generate a trip budget breakdown based ONLY on prices and cost information mentioned in the uploaded travel guide.
+
+Rules:
+1. ONLY use prices mentioned in the provided context. Do NOT invent or estimate prices not in the guide.
+2. If a category has no price information in the guide, say "No pricing info in your guide" and give a reasonable range with a disclaimer.
+3. Adjust for "{budget_style}": backpacker = cheapest options, mid_range = moderate, luxury = premium options mentioned.
+4. Calculate for {num_travelers} traveler(s) over {duration} days.
+5. Convert to {currency} if needed (use approximate exchange rates and note this).
+6. Always include a disclaimer that prices are from the guide and may have changed.
+7. Break down by day AND by category.
+
+Respond in this exact JSON format:
+{
+  "currency": "USD",
+  "totalEstimate": { "low": 800, "high": 1200 },
+  "perPerson": { "low": 400, "high": 600 },
+  "perDay": { "low": 80, "high": 120 },
+  "categories": [
+    {
+      "name": "Accommodation",
+      "low": 200,
+      "high": 350,
+      "items": [
+        {
+          "item": "Guesthouse in Old Town",
+          "cost": "$25-40/night",
+          "source": "Mentioned in accommodation section of guide",
+          "budgetTier": "backpacker"
+        }
+      ]
+    }
+  ],
+  "disclaimer": "All prices are based on your uploaded guide and may not reflect current rates.",
+  "savingTips": ["...", "..."]
+}
+
+TRAVEL GUIDE CONTEXT:
+{chunks}
+```
+
+#### 8. TIPS GENERATOR (components/planner/TipsPanel.tsx + api/generate-tips/route.ts)
+
+**Frontend**:
+- Auto-generates on first load (no button needed, triggers after upload)
+- Renders as categorized cards:
+  - "🛡️ Safety & Health" — safety warnings, scam alerts, health tips from guide
+  - "🙏 Culture & Etiquette" — cultural norms, dress codes, tipping customs from guide
+  - "🗣️ Useful Phrases" — local language phrases if mentioned in guide
+  - "⚡ Pro Tips" — insider tips and local knowledge from guide
+- Each tip card shows source: "From your guide" badge
+- Color-coded by urgency: red border for safety warnings, amber for important, teal for nice-to-know
+
+**Backend**:
+- System prompt:
+
+```
+Extract practical travel tips from the uploaded guide, organized by category.
+
+Rules:
+1. ONLY extract tips and information present in the provided context.
+2. Prioritize safety-critical information first.
+3. If the guide mentions scams, warnings, or dangers, ALWAYS include them prominently.
+4. For cultural tips, only include what the guide specifically mentions.
+5. For phrases, only include ones from the guide. Do NOT invent translations.
+6. Do NOT add generic travel advice not in the guide.
+7. Mark urgency: "critical" for safety, "important" for cultural/practical, "helpful" for nice-to-know.
+
+Respond in this exact JSON format:
+{
+  "safety": [
+    { "tip": "...", "urgency": "critical", "source": "From your guide" }
+  ],
+  "culture": [
+    { "tip": "...", "urgency": "important", "source": "From your guide" }
+  ],
+  "phrases": [
+    { "local": "Sawadee krap", "meaning": "Hello (male speaker)", "source": "From your guide" }
+  ],
+  "proTips": [
+    { "tip": "...", "urgency": "helpful", "source": "From your guide" }
+  ]
+}
+
+TRAVEL GUIDE CONTEXT:
+{all_chunks}
+```
+
+#### 9. GUARDRAILS SYSTEM (lib/guardrails.ts)
+
+```typescript
+// lib/guardrails.ts
+
+interface GuardrailResult {
+  passed: boolean;
+  reason?: string;
+  type: 'relevance' | 'safety' | 'scope' | 'grounding';
+}
+
+// 1. Relevance check — is the query related to the uploaded travel content?
+export function checkRelevance(similarityScore: number): GuardrailResult {
+  if (similarityScore < 0.3) {
+    return {
+      passed: false,
+      reason: "Your question doesn't seem related to the destination in your uploaded guide. Try asking about places, activities, or tips from your guide!",
+      type: 'relevance'
+    };
+  }
+  return { passed: true, type: 'relevance' };
+}
+
+// 2. Input sanitization — block prompt injection attempts
+export function checkInputSafety(input: string): GuardrailResult {
+  const blockedPatterns = [
+    /ignore previous instructions/i,
+    /forget your rules/i,
+    /you are now/i,
+    /act as if/i,
+    /pretend you/i,
+    /override/i,
+    /jailbreak/i,
+    /disregard/i,
+    /new persona/i,
+    /system prompt/i,
+  ];
+
+  for (const pattern of blockedPatterns) {
+    if (pattern.test(input)) {
+      return {
+        passed: false,
+        reason: "This input was flagged by our safety system. Please ask a travel question instead!",
+        type: 'safety'
+      };
+    }
+  }
+  return { passed: true, type: 'safety' };
+}
+
+// 3. Scope check — is this about travel/destination planning?
+export function checkScope(input: string): GuardrailResult {
+  const offTopicPatterns = [
+    /write me a (poem|song|story|essay|code)/i,
+    /what is the meaning of life/i,
+    /tell me a joke/i,
+    /play a game/i,
+    /help me with (homework|math|coding|programming)/i,
+    /translate .+ to .+ (language|in)/i,
+    /who is the president/i,
+    /explain (quantum|relativity|blockchain)/i,
+  ];
+
+  for (const pattern of offTopicPatterns) {
+    if (pattern.test(input)) {
+      return {
+        passed: false,
+        reason: "I'm your travel planning assistant — let's focus on your trip! Ask me about your destination, itinerary, packing, or budget.",
+        type: 'scope'
+      };
+    }
+  }
+  return { passed: true, type: 'scope' };
+}
+
+// 4. Output grounding — check AI response stays grounded in guide
+export function checkOutputGrounding(response: string, chunks: string[]): GuardrailResult {
+  const responseWords = new Set(response.toLowerCase().split(/\s+/));
+  const chunkWords = new Set(chunks.join(' ').toLowerCase().split(/\s+/));
+  const overlap = [...responseWords].filter(w => chunkWords.has(w) && w.length > 4);
+
+  if (overlap.length < 5) {
+    return {
+      passed: false,
+      reason: "The AI response may not be well-grounded in your travel guide.",
+      type: 'grounding'
+    };
+  }
+  return { passed: true, type: 'grounding' };
+}
+
+// Run all guardrails
+export function runAllGuardrails(
+  input: string,
+  similarityScore: number
+): { passed: boolean; results: GuardrailResult[] } {
+  const results = [
+    checkInputSafety(input),
+    checkScope(input),
+    checkRelevance(similarityScore),
+  ];
+  const passed = results.every(r => r.passed);
+  return { passed, results };
+}
+```
+
+#### 10. AI LOGGER (lib/logger.ts)
+
+```typescript
+// lib/logger.ts
+
+interface AILogEntry {
+  id: string;
+  timestamp: string;
+  action: 'chat' | 'itinerary' | 'packing' | 'budget' | 'tips' | 'destination-analysis';
+  model: string;
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+  latencyMs: number;
+  guardrailsPassed: boolean;
+  guardrailDetails?: string;
+  similarityScore?: number;
+  qualityScore?: number;
+  metadata?: Record<string, any>;
+}
+
+const logs: AILogEntry[] = [];
+
+export function logAICall(entry: Omit<AILogEntry, 'id' | 'timestamp'>): AILogEntry {
+  const fullEntry: AILogEntry = {
+    ...entry,
+    id: crypto.randomUUID(),
+    timestamp: new Date().toISOString(),
+  };
+  logs.push(fullEntry);
+  console.log(`[AI LOG] ${fullEntry.action} | ${fullEntry.totalTokens} tokens | ${fullEntry.latencyMs}ms | guardrails: ${fullEntry.guardrailsPassed}`);
+  return fullEntry;
+}
+
+export function getLogs(): AILogEntry[] {
+  return [...logs].reverse();
+}
+
+export function getLogStats() {
+  return {
+    totalCalls: logs.length,
+    totalTokens: logs.reduce((sum, l) => sum + l.totalTokens, 0),
+    avgLatency: logs.length ? Math.round(logs.reduce((sum, l) => sum + l.latencyMs, 0) / logs.length) : 0,
+    guardrailBlockRate: logs.length ? Math.round((logs.filter(l => !l.guardrailsPassed).length / logs.length) * 100) : 0,
+    byAction: logs.reduce((acc, l) => { acc[l.action] = (acc[l.action] || 0) + 1; return acc; }, {} as Record<string, number>),
+  };
+}
+```
+
+#### 11. AI LOGS PANEL (components/planner/AILogPanel.tsx)
+
+- Summary stats bar at top:
+  - Total API Calls
+  - Total Tokens Used
+  - Average Latency
+  - Guardrail Block Rate %
+  - Each stat in a mini card with icon and animated count-up
+- Table of all interactions:
+  - Columns: Time | Action | Tokens | Latency | Guardrails | Quality
+  - Color-coded rows: green for passed, red for blocked
+  - Action column: category badge (chat/itinerary/packing/budget/tips)
+  - Expandable row for guardrail breakdown details
+- Auto-refresh via polling every 5 seconds
+- "Clear Logs" button
+- **This panel is the key demo for "evaluation/logging" course concept**
+
+#### 12. VECTOR STORE (lib/vectorstore.ts)
+
+```typescript
+// lib/vectorstore.ts
+
+interface VectorEntry {
+  id: string;
+  text: string;
+  embedding: number[];
+  metadata: {
+    chunkIndex: number;
+    startChar: number;
+    endChar: number;
+    source: string;
+  };
+}
+
+class InMemoryVectorStore {
+  private entries: VectorEntry[] = [];
+
+  add(entries: VectorEntry[]) {
+    this.entries.push(...entries);
+  }
+
+  search(queryEmbedding: number[], topK: number = 3): { entry: VectorEntry; score: number }[] {
+    if (this.entries.length === 0) return [];
+    return this.entries
+      .map(entry => ({
+        entry,
+        score: this.cosineSimilarity(queryEmbedding, entry.embedding),
+      }))
+      .sort((a, b) => b.score - a.score)
+      .slice(0, topK);
+  }
+
+  private cosineSimilarity(a: number[], b: number[]): number {
+    let dot = 0, normA = 0, normB = 0;
+    for (let i = 0; i < a.length; i++) {
+      dot += a[i] * b[i];
+      normA += a[i] * a[i];
+      normB += b[i] * b[i];
+    }
+    return dot / (Math.sqrt(normA) * Math.sqrt(normB));
+  }
+
+  clear() {
+    this.entries = [];
+  }
+
+  get size() {
+    return this.entries.length;
+  }
+}
+
+export const vectorStore = new InMemoryVectorStore();
+```
+
+#### 13. DOCUMENT CHUNKER (lib/chunker.ts)
+
+```typescript
+// lib/chunker.ts
+
+interface Chunk {
+  text: string;
+  index: number;
+  startChar: number;
+  endChar: number;
+}
+
+export function chunkDocument(
+  text: string,
+  maxTokens: number = 500,
+  overlapTokens: number = 50
+): Chunk[] {
+  const words = text.split(/\s+/);
+  const chunks: Chunk[] = [];
+  const wordsPerChunk = Math.floor(maxTokens * 0.75);
+  const overlapWords = Math.floor(overlapTokens * 0.75);
+
+  let startWord = 0;
+  let charOffset = 0;
+
+  while (startWord < words.length) {
+    const endWord = Math.min(startWord + wordsPerChunk, words.length);
+    const chunkWords = words.slice(startWord, endWord);
+    const chunkText = chunkWords.join(' ');
+
+    const startChar = text.indexOf(chunkWords[0], charOffset);
+    const endChar = startChar + chunkText.length;
+
+    chunks.push({
+      text: chunkText,
+      index: chunks.length,
+      startChar,
+      endChar,
+    });
+
+    charOffset = startChar + 1;
+    startWord = endWord - overlapWords;
+    if (startWord >= words.length) break;
+    if (endWord === words.length) break;
+  }
+
+  return chunks;
+}
+```
+
+---
+
+### UI/UX DESIGN REQUIREMENTS (CRITICAL)
+
+The UI must feel like a premium travel app — warm, inviting, and adventurous while remaining clean and functional:
+
+**Color Palette**:
+- Background: #0a0a0a (near black)
+- Surface/Cards: #141414 with border #1e1e1e
+- Elevated surface: #1c1c1c
+- Primary accent: Warm amber #f59e0b (adventure, warmth, sunset)
+- Secondary accent: Teal #14b8a6 (ocean, exploration, freshness)
+- Tertiary: Sky blue #38bdf8 (info, sky, clarity)
+- Success: Emerald #10b981
+- Error/Warning: Rose #f43f5e
+- Text primary: #fafafa
+- Text secondary: #a1a1aa
+- Text muted: #71717a
+
+**Typography**:
+- Geist Sans for all body text
+- Geist Mono for costs, stats, numbers, durations, token counts
+- Hero headline: 56px, weight 800, letter-spacing -0.03em
+- Section headings: 32px, weight 700
+- Card titles: 18px, weight 600
+- Body: 16px, weight 400, line-height 1.6
+- Small labels: 12px, weight 500, uppercase, letter-spacing 0.05em
+
+**Effects & Polish**:
+- Glassmorphism cards: background rgba(255,255,255,0.04), backdrop-filter blur(16px), border 1px solid rgba(255,255,255,0.08)
+- Hover states on ALL interactive elements
+- Loading skeletons with shimmer for every async operation
+- Toast notifications (bottom-right)
+- Itinerary timeline: vertical amber gradient line with day nodes as circles
+- Packing checklist: checkbox tick animation (scale bounce)
+- Budget charts: animated bar fill on render (use recharts with custom animation)
+- Budget donut: animated stroke-dashoffset reveal
+- Tips cards: left border color-coded by urgency
+- Chat messages: fade-in + slide-up
+- Tab switching: cross-fade content
+- Buttons: press scale(0.97), release scale(1) with spring
+- File upload: airplane icon animation across progress bar
+- Destination header: subtle parallax text shadow
+
+**Responsive**:
+- Desktop: side-by-side panels
+- Tablet: stacked panels with collapsible guide viewer
+- Mobile: single column, bottom tab navigation, guide via slide-over drawer
+
+---
+
+### ENVIRONMENT SETUP
+
+Create `.env.local`:
+```
+OPENAI_API_KEY=your-key-here
+```
+
+Create `.env.example`:
+```
+OPENAI_API_KEY=sk-your-openai-api-key
+```
+
+---
+
+### BUILD ORDER (follow this sequence)
+
+1. **Landing page** — get visual impression right first
+2. **File upload + guide processing** — upload, chunk, embed, analyze destination
+3. **Vector store + Destination chat** — RAG pipeline end-to-end
+4. **Itinerary generator** — day-by-day timeline from guide
+5. **Packing list generator** — destination-aware checklist
+6. **Budget planner** — cost breakdown with charts
+7. **Tips generator** — safety/culture/phrases extraction
+8. **Guardrails integration** — wire all 4 checks across every route
+9. **AI logging + logs panel** — add logging everywhere, build UI
+10. **Polish** — animations, transitions, error handling, responsive
+
+Test each feature individually before moving to the next.
+
+---
+
+### SCOPE CONTROL & FALLBACK PLAN (CRITICAL FOR HACKATHON)
+
+**Feature cut priority** (if time runs out, cut in this order):
+1. CUT FIRST: Tips generator (nice-to-have, easily removed)
+2. CUT SECOND: Budget planner (useful but not core)
+3. CUT THIRD: Packing list (fun but not essential)
+4. NEVER CUT: File upload + Destination chat + Itinerary generator + Guardrails — these ARE the project
+
+**Minimum Viable Submission** (if everything goes wrong):
+- Landing page + File upload + Destination Chat with guardrails + Itinerary generator = demonstrates all 6 GenAI concepts
+
+**Fallback if deployment fails**:
+- Record a 2-minute screen recording showing the app locally
+- Include recording in submission folder
+- Add local setup instructions in README
+- Screenshots of: landing page, guide upload, chat grounded in guide, itinerary generated, guardrails blocking off-topic, AI logs panel
+
+**3-Sentence Project Explanation** (memorize for demo):
+1. "TravelSage AI solves the problem of generic trip planning by creating a destination expert that actually reads YOUR guidebook."
+2. "Upload any travel guide PDF, and the AI uses RAG to generate personalized itineraries, smart packing lists, and budget breakdowns — all grounded in the recommendations from your specific guide."
+3. "The system includes guardrails that refuse to invent attractions or fabricate prices, constrained prompting for structured JSON outputs, and full AI interaction logging for evaluation transparency."
+
+---
+
+### README.md
+
+Generate this EXACT README.md file in the repo root:
+
+```markdown
+# 🗺️ TravelSage AI
+
+> AI-powered trip planner that transforms any travel guide into a personalized planning experience.
+
+## Problem
+
+Travelers waste hours manually extracting information from guidebooks and planning trips without structured tools.
+
+## Solution
+
+TravelSage AI lets you upload any travel guide, destination PDF, or trip notes and instantly generates AI-powered itineraries, smart packing lists, budget breakdowns, and a destination expert chatbot — all grounded in your specific guide's recommendations.
+
+## How the AI Works
+
+The app uses **RAG (Retrieval-Augmented Generation)** to chunk and embed travel guides, retrieve relevant context for every AI interaction, and generate grounded responses. **Guardrails** prevent the AI from inventing attractions, fabricating prices, or answering off-topic questions.
+
+## GenAI Concepts Demonstrated (6/6)
+
+| Concept | How It's Used |
+|---------|--------------|
+| **Constrained Prompting** | Every prompt uses structured system instructions with strict output rules and JSON schemas for itineraries, packing lists, budgets, and tips |
+| **RAG** | Travel guides are chunked (~500 tokens), embedded with `text-embedding-3-small`, stored in an in-memory vector store, and retrieved via cosine similarity |
+| **Guardrails** | 4-layer system: input sanitization, scope checking, relevance validation (similarity ≥ 0.3), output grounding verification |
+| **Evaluation & Logging** | Every AI call logged with timestamps, tokens, latency, guardrail results, quality metrics — viewable in AI Logs panel |
+| **Multimodal Input** | Accepts PDF (pdf-parse), plain text (.txt, .md), or direct paste |
+| **Deployment** | Railway/Vercel-optimized Next.js with serverless API routes |
+
+## Tech Stack
+
+- **Framework**: Next.js 14 (App Router)
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS + shadcn/ui
+- **AI**: OpenAI API (gpt-4o-mini)
+- **Embeddings**: text-embedding-3-small
+- **Vector Store**: In-memory (cosine similarity)
+- **PDF Parsing**: pdf-parse
+
+## Setup
+
+\`\`\`bash
+git clone <your-repo-url>
+cd travelsage-ai
+npm install
+\`\`\`
+
+Create `.env.local`:
+\`\`\`
+OPENAI_API_KEY=sk-your-key-here
+\`\`\`
+
+Run:
+\`\`\`bash
+npm run dev
+\`\`\`
+
+Open [http://localhost:3000](http://localhost:3000)
+
+## Deploy to Railway
+
+1. Push to GitHub
+2. Go to [railway.app](https://railway.app) → New Project → Deploy from GitHub
+3. Add `OPENAI_API_KEY` in Variables tab
+4. Railway auto-detects Next.js and deploys
+5. Go to Settings → Networking → Generate Domain
+
+## Live Demo
+
+🔗 **[Your deployed URL here]**
+
+## Provenance
+
+All generated scaffolding files include:
+\`\`\`
+// source_handbook: week11-hackathon-preparation
+\`\`\`
+
+---
+
+Built for CST4625 Generative AI Module | Powered by OpenAI
+```
+
+---
+
+### GRANDMA.md (MANDATORY — REQUIRED FOR SUBMISSION)
+
+Generate this EXACT file as `GRANDMA.md` in the repo root:
+
+```markdown
+# 🗺️ TravelSage AI — Explained for Grandma
+
+Hey Grandma! So you know how when you go on holiday, you buy one of those thick travel guidebooks? And then you spend hours flipping through it trying to figure out what to see, where to eat, and what to pack?
+
+Well, I built a website that does all of that for you automatically!
+
+Here's how it works:
+
+1. **You upload your guidebook** (as a digital file) to the website
+2. **The computer reads the whole thing** and remembers all the important bits — the best restaurants, the famous sights, the prices, everything
+3. **Then you can ask it questions** like "What should I see on Day 1?" or "What should I pack?" and it gives you answers based ONLY on what YOUR guidebook says — it doesn't make things up!
+4. **It can even make you a full trip plan** — day by day, with morning, afternoon, and evening activities, all from your guidebook
+
+The clever bit: I built in safety rails so the computer NEVER invents places that don't exist or makes up prices. If it doesn't know something from your guidebook, it honestly says "I don't know, it's not in your guide!"
+
+I also built a behind-the-scenes panel where you can see every time the computer "thinks" — how long it took, how many words it read, and whether the safety checks passed. This is like showing your working in a maths exam!
+
+**In short**: Upload a guidebook → get a full trip plan, packing list, and budget — all based on what the book actually says. No fibs!
+
+Love you Grandma 💛
+```
+
+---
+
+### PROVENANCE
+
+Add this comment to the top of every generated file:
+```
+// source_handbook: week11-hackathon-preparation
+```
+
+---
+
+### ⏰ 1-HOUR SPRINT PLAN (CRITICAL — FOLLOW THIS EXACTLY)
+
+You have 60 minutes. Here is the EXACT order to build. Do NOT skip ahead. Do NOT polish until the end.
+
+**Minutes 0-5: Setup**
+- Create the Next.js project
+- Install all dependencies
+- Set up Tailwind + shadcn/ui
+- Add .env.local with OPENAI_API_KEY
+- Initialize git repo, push to GitHub
+- DO NOT spend time on landing page design yet
+
+**Minutes 5-20: CORE PIPELINE (most important)**
+- Build /api/upload route (PDF parse + chunking + embeddings)
+- Build lib/vectorstore.ts, lib/chunker.ts, lib/openai.ts
+- Build lib/prompts.ts with all system prompts
+- Build lib/guardrails.ts
+- Build lib/logger.ts
+- Build /api/chat route (RAG chat with guardrails + logging)
+- Test: upload a PDF, ask a question, confirm grounded answer
+
+**Minutes 20-35: KEY FEATURES**
+- Build /api/generate-itinerary route
+- Build /api/generate-packing route (if time permits)
+- Build basic frontend: file upload + chat panel + itinerary panel
+- Keep UI functional, NOT pretty — dark background, basic layout
+
+**Minutes 35-50: REMAINING FEATURES + UI**
+- Build /api/generate-budget (if time permits — CUT if behind)
+- Build /api/generate-tips (if time permits — CUT if behind)
+- Build AI Logs panel (/api/logs + frontend)
+- Add tab navigation between panels
+- Landing page (can be simple — hero + CTA button is enough)
+
+**Minutes 50-55: SUBMISSION FILES**
+- Create README.md (copy from above)
+- Create GRANDMA.md (copy from above)
+- Git commit + push everything
+- Verify GitHub repo has all files
+
+**Minutes 55-60: DEPLOY**
+- Deploy to Railway (or Vercel)
+- Add OPENAI_API_KEY to environment variables
+- Generate domain
+- Test the live URL works
+- Copy both links for submission:
+  1. GitHub repo URL
+  2. Deployed app URL
+
+**IF YOU RUN OUT OF TIME — MINIMUM SUBMISSION:**
+Landing page + File upload + RAG Chat + Guardrails + README.md + GRANDMA.md = demonstrates all 6 concepts. Skip itinerary, packing, budget, tips. A working chat with guardrails scores higher than a broken full app.
+
+---
+
+### SUBMISSION CHECKLIST (before 9:30pm sharp)
+
+- [ ] GitHub repo is PUBLIC
+- [ ] README.md exists in repo root with all sections
+- [ ] GRANDMA.md exists in repo root
+- [ ] .env.example exists (NOT .env.local — never commit API keys)
+- [ ] App is deployed and accessible via URL
+- [ ] Both links submitted: GitHub URL + Deployed URL
+- [ ] Both team members submitted individually (if pair)
+- [ ] `// source_handbook: week11-hackathon-preparation` in generated files
+- [ ] At least one commit before 6:30pm, final by 9:30pm
+
+---
+
+NOW: I have only 1 HOUR. Skip the implementation plan. Start coding IMMEDIATELY. Build in the exact order from the sprint plan above. Start with the core pipeline (upload + vectorstore + chat), NOT the landing page. Speed over perfection. A working ugly app beats a pretty broken one. GO.

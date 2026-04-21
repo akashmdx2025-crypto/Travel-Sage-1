@@ -14,3 +14,181 @@ import * as zod from "zod";
 export const HealthCheckResponse = zod.object({
   status: zod.string(),
 });
+
+/**
+ * @summary Upload and process a travel document
+ */
+export const UploadTravelGuideBody = zod.object({
+  fileName: zod.string(),
+  mimeType: zod.string().optional(),
+  contentBase64: zod.string().optional(),
+  pastedText: zod.string().optional(),
+});
+
+export const UploadTravelGuideResponse = zod.object({
+  documentId: zod.string(),
+  fileName: zod.string(),
+  textPreview: zod.string(),
+  chunkCount: zod.number(),
+  wordCount: zod.number(),
+  analysis: zod.object({
+    destinationName: zod.string(),
+    country: zod.string(),
+    flagEmoji: zod.string(),
+    attractions: zod.array(zod.string()),
+    restaurants: zod.array(zod.string()),
+    activities: zod.array(zod.string()),
+    priceRanges: zod.array(zod.string()),
+    climate: zod.string(),
+    culturalNotes: zod.array(zod.string()),
+    summary: zod.string(),
+  }),
+  highlights: zod.object({
+    places: zod.array(zod.string()),
+    prices: zod.array(zod.string()),
+    activities: zod.array(zod.string()),
+  }),
+});
+
+/**
+ * @summary Ask a grounded destination question
+ */
+export const ChatWithTravelSageBody = zod.object({
+  documentId: zod.string(),
+  question: zod.string(),
+});
+
+export const ChatWithTravelSageResponse = zod.object({
+  answer: zod.string(),
+  sources: zod.array(
+    zod.object({
+      id: zod.string(),
+      text: zod.string(),
+      similarity: zod.number(),
+    }),
+  ),
+  guardrail: zod.object({
+    passed: zod.boolean(),
+    reason: zod.string(),
+  }),
+});
+
+/**
+ * @summary Generate a grounded itinerary
+ */
+export const generateItineraryBodyDaysMax = 14;
+
+export const GenerateItineraryBody = zod.object({
+  documentId: zod.string(),
+  days: zod.number().min(1).max(generateItineraryBodyDaysMax),
+  style: zod.string(),
+  interests: zod.array(zod.string()),
+});
+
+export const GenerateItineraryResponse = zod.object({
+  days: zod.array(
+    zod.object({
+      day: zod.number(),
+      title: zod.string(),
+      morning: zod.array(zod.string()),
+      afternoon: zod.array(zod.string()),
+      evening: zod.array(zod.string()),
+      estimatedCost: zod.string(),
+    }),
+  ),
+  sources: zod.array(
+    zod.object({
+      id: zod.string(),
+      text: zod.string(),
+      similarity: zod.number(),
+    }),
+  ),
+});
+
+/**
+ * @summary Generate a grounded packing list
+ */
+export const GeneratePackingListBody = zod.object({
+  documentId: zod.string(),
+});
+
+export const GeneratePackingListResponse = zod.object({
+  categories: zod.array(
+    zod.object({
+      category: zod.string(),
+      items: zod.array(zod.string()),
+    }),
+  ),
+  sources: zod.array(
+    zod.object({
+      id: zod.string(),
+      text: zod.string(),
+      similarity: zod.number(),
+    }),
+  ),
+});
+
+/**
+ * @summary Generate a grounded trip budget
+ */
+export const GenerateBudgetBody = zod.object({
+  documentId: zod.string(),
+});
+
+export const GenerateBudgetResponse = zod.object({
+  items: zod.array(
+    zod.object({
+      category: zod.string(),
+      estimate: zod.string(),
+      notes: zod.string(),
+    }),
+  ),
+  totalGuidance: zod.string(),
+  sources: zod.array(
+    zod.object({
+      id: zod.string(),
+      text: zod.string(),
+      similarity: zod.number(),
+    }),
+  ),
+});
+
+/**
+ * @summary Generate grounded destination tips
+ */
+export const GenerateTipsBody = zod.object({
+  documentId: zod.string(),
+});
+
+export const GenerateTipsResponse = zod.object({
+  safety: zod.array(zod.string()),
+  culture: zod.array(zod.string()),
+  practical: zod.array(zod.string()),
+  sources: zod.array(
+    zod.object({
+      id: zod.string(),
+      text: zod.string(),
+      similarity: zod.number(),
+    }),
+  ),
+});
+
+/**
+ * @summary Retrieve AI transparency logs
+ */
+export const GetAiLogsResponse = zod.object({
+  logs: zod.array(
+    zod.object({
+      id: zod.string(),
+      timestamp: zod.string(),
+      endpoint: zod.string(),
+      model: zod.string(),
+      promptTokens: zod.number(),
+      completionTokens: zod.number(),
+      latencyMs: zod.number(),
+      guardrailPassed: zod.boolean(),
+      qualityScore: zod.number(),
+      notes: zod.string(),
+    }),
+  ),
+});

@@ -6,4 +6,23 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from "./aiLogEntry";
+export * from "./budgetItem";
+export * from "./budgetResult";
+export * from "./chatRequest";
+export * from "./chatResult";
+export * from "./chatResultGuardrail";
+export * from "./destinationAnalysis";
+export * from "./generatorRequest";
 export * from "./healthStatus";
+export * from "./itineraryDay";
+export * from "./itineraryRequest";
+export * from "./itineraryResult";
+export * from "./logsResult";
+export * from "./packingCategory";
+export * from "./packingResult";
+export * from "./sourceChunk";
+export * from "./tipsResult";
+export * from "./uploadTravelGuideRequest";
+export * from "./uploadTravelGuideResult";
+export * from "./uploadTravelGuideResultHighlights";

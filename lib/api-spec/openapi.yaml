@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: travelsage
+    description: TravelSage AI operations
 paths:
   /healthz:
     get:
@@ -24,6 +26,126 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /travelsage/upload:
+    post:
+      operationId: uploadTravelGuide
+      tags: [travelsage]
+      summary: Upload and process a travel document
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UploadTravelGuideRequest"
+      responses:
+        "200":
+          description: Processed travel guide
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadTravelGuideResult"
+  /travelsage/chat:
+    post:
+      operationId: chatWithTravelSage
+      tags: [travelsage]
+      summary: Ask a grounded destination question
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatRequest"
+      responses:
+        "200":
+          description: Chat response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatResult"
+  /travelsage/generate-itinerary:
+    post:
+      operationId: generateItinerary
+      tags: [travelsage]
+      summary: Generate a grounded itinerary
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ItineraryRequest"
+      responses:
+        "200":
+          description: Generated itinerary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ItineraryResult"
+  /travelsage/generate-packing:
+    post:
+      operationId: generatePackingList
+      tags: [travelsage]
+      summary: Generate a grounded packing list
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GeneratorRequest"
+      responses:
+        "200":
+          description: Generated packing list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PackingResult"
+  /travelsage/generate-budget:
+    post:
+      operationId: generateBudget
+      tags: [travelsage]
+      summary: Generate a grounded trip budget
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GeneratorRequest"
+      responses:
+        "200":
+          description: Generated budget
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BudgetResult"
+  /travelsage/generate-tips:
+    post:
+      operationId: generateTips
+      tags: [travelsage]
+      summary: Generate grounded destination tips
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GeneratorRequest"
+      responses:
+        "200":
+          description: Generated tips
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TipsResult"
+  /travelsage/logs:
+    get:
+      operationId: getAiLogs
+      tags: [travelsage]
+      summary: Retrieve AI transparency logs
+      responses:
+        "200":
+          description: AI interaction logs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LogsResult"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +155,271 @@ components:
           type: string
       required:
         - status
-
+    SourceChunk:
+      type: object
+      properties:
+        id:
+          type: string
+        text:
+          type: string
+        similarity:
+          type: number
+      required: [id, text, similarity]
+    DestinationAnalysis:
+      type: object
+      properties:
+        destinationName:
+          type: string
+        country:
+          type: string
+        flagEmoji:
+          type: string
+        attractions:
+          type: array
+          items:
+            type: string
+        restaurants:
+          type: array
+          items:
+            type: string
+        activities:
+          type: array
+          items:
+            type: string
+        priceRanges:
+          type: array
+          items:
+            type: string
+        climate:
+          type: string
+        culturalNotes:
+          type: array
+          items:
+            type: string
+        summary:
+          type: string
+      required: [destinationName, country, flagEmoji, attractions, restaurants, activities, priceRanges, climate, culturalNotes, summary]
+    UploadTravelGuideRequest:
+      type: object
+      properties:
+        fileName:
+          type: string
+        mimeType:
+          type: string
+        contentBase64:
+          type: string
+        pastedText:
+          type: string
+      required: [fileName]
+    UploadTravelGuideResult:
+      type: object
+      properties:
+        documentId:
+          type: string
+        fileName:
+          type: string
+        textPreview:
+          type: string
+        chunkCount:
+          type: integer
+        wordCount:
+          type: integer
+        analysis:
+          $ref: "#/components/schemas/DestinationAnalysis"
+        highlights:
+          type: object
+          properties:
+            places:
+              type: array
+              items:
+                type: string
+            prices:
+              type: array
+              items:
+                type: string
+            activities:
+              type: array
+              items:
+                type: string
+          required: [places, prices, activities]
+      required: [documentId, fileName, textPreview, chunkCount, wordCount, analysis, highlights]
+    ChatRequest:
+      type: object
+      properties:
+        documentId:
+          type: string
+        question:
+          type: string
+      required: [documentId, question]
+    ChatResult:
+      type: object
+      properties:
+        answer:
+          type: string
+        sources:
+          type: array
+          items:
+            $ref: "#/components/schemas/SourceChunk"
+        guardrail:
+          type: object
+          properties:
+            passed:
+              type: boolean
+            reason:
+              type: string
+          required: [passed, reason]
+      required: [answer, sources, guardrail]
+    ItineraryRequest:
+      type: object
+      properties:
+        documentId:
+          type: string
+        days:
+          type: integer
+          minimum: 1
+          maximum: 14
+        style:
+          type: string
+        interests:
+          type: array
+          items:
+            type: string
+      required: [documentId, days, style, interests]
+    GeneratorRequest:
+      type: object
+      properties:
+        documentId:
+          type: string
+      required: [documentId]
+    ItineraryDay:
+      type: object
+      properties:
+        day:
+          type: integer
+        title:
+          type: string
+        morning:
+          type: array
+          items:
+            type: string
+        afternoon:
+          type: array
+          items:
+            type: string
+        evening:
+          type: array
+          items:
+            type: string
+        estimatedCost:
+          type: string
+      required: [day, title, morning, afternoon, evening, estimatedCost]
+    ItineraryResult:
+      type: object
+      properties:
+        days:
+          type: array
+          items:
+            $ref: "#/components/schemas/ItineraryDay"
+        sources:
+          type: array
+          items:
+            $ref: "#/components/schemas/SourceChunk"
+      required: [days, sources]
+    PackingCategory:
+      type: object
+      properties:
+        category:
+          type: string
+        items:
+          type: array
+          items:
+            type: string
+      required: [category, items]
+    PackingResult:
+      type: object
+      properties:
+        categories:
+          type: array
+          items:
+            $ref: "#/components/schemas/PackingCategory"
+        sources:
+          type: array
+          items:
+            $ref: "#/components/schemas/SourceChunk"
+      required: [categories, sources]
+    BudgetItem:
+      type: object
+      properties:
+        category:
+          type: string
+        estimate:
+          type: string
+        notes:
+          type: string
+      required: [category, estimate, notes]
+    BudgetResult:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/BudgetItem"
+        totalGuidance:
+          type: string
+        sources:
+          type: array
+          items:
+            $ref: "#/components/schemas/SourceChunk"
+      required: [items, totalGuidance, sources]
+    TipsResult:
+      type: object
+      properties:
+        safety:
+          type: array
+          items:
+            type: string
+        culture:
+          type: array
+          items:
+            type: string
+        practical:
+          type: array
+          items:
+            type: string
+        sources:
+          type: array
+          items:
+            $ref: "#/components/schemas/SourceChunk"
+      required: [safety, culture, practical, sources]
+    AiLogEntry:
+      type: object
+      properties:
+        id:
+          type: string
+        timestamp:
+          type: string
+        endpoint:
+          type: string
+        model:
+          type: string
+        promptTokens:
+          type: integer
+        completionTokens:
+          type: integer
+        latencyMs:
+          type: integer
+        guardrailPassed:
+          type: boolean
+        qualityScore:
+          type: number
+        notes:
+          type: string
+      required: [id, timestamp, endpoint, model, promptTokens, completionTokens, latencyMs, guardrailPassed, qualityScore, notes]
+    LogsResult:
+      type: object
+      properties:
+        logs:
+          type: array
+          items:
+            $ref: "#/components/schemas/AiLogEntry"
+      required: [logs]
