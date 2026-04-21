@@ -1,9 +1,8 @@
-import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Map, MapPin, Compass, Utensils, Activity, Sun } from 'lucide-react';
-import { UploadTravelGuideResult } from '@workspace/api-zod/src/generated/types/uploadTravelGuideResult';
+import type { UploadTravelGuideResult } from '@workspace/api-client-react';
 
 interface AnalysisViewerProps {
   uploadResult: UploadTravelGuideResult;
@@ -11,6 +10,11 @@ interface AnalysisViewerProps {
 
 export function AnalysisViewer({ uploadResult }: AnalysisViewerProps) {
   const { analysis, highlights } = uploadResult;
+  const places = Array.isArray(highlights?.places) ? highlights.places : [];
+  const activities = Array.isArray(highlights?.activities) ? highlights.activities : [];
+  const priceRanges = Array.isArray(analysis?.priceRanges) ? analysis.priceRanges : [];
+  const restaurants = Array.isArray(analysis?.restaurants) ? analysis.restaurants : [];
+  const culturalNotes = Array.isArray(analysis?.culturalNotes) ? analysis.culturalNotes : [];
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -41,7 +45,7 @@ export function AnalysisViewer({ uploadResult }: AnalysisViewerProps) {
                 <MapPin className="h-4 w-4 mr-2 text-primary" /> Key Places
               </h4>
               <ul className="space-y-2">
-                {highlights.places.slice(0, 5).map((place, i) => (
+                {places.slice(0, 5).map((place, i) => (
                   <li key={i} className="text-sm font-medium flex items-start">
                     <span className="text-accent mr-2">-</span> {place}
                   </li>
@@ -54,7 +58,7 @@ export function AnalysisViewer({ uploadResult }: AnalysisViewerProps) {
                 <Activity className="h-4 w-4 mr-2 text-primary" /> Activities
               </h4>
               <ul className="space-y-2">
-                {highlights.activities.slice(0, 5).map((act, i) => (
+                {activities.slice(0, 5).map((act, i) => (
                   <li key={i} className="text-sm font-medium flex items-start">
                     <span className="text-accent mr-2">-</span> {act}
                   </li>
@@ -74,7 +78,7 @@ export function AnalysisViewer({ uploadResult }: AnalysisViewerProps) {
                 Price Ranges
               </h4>
               <div className="flex flex-wrap gap-1">
-                {analysis.priceRanges.map((price, i) => (
+                {priceRanges.map((price, i) => (
                   <Badge key={i} variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20">
                     {price}
                   </Badge>
@@ -94,7 +98,7 @@ export function AnalysisViewer({ uploadResult }: AnalysisViewerProps) {
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2">
-              {analysis.restaurants.map((rest, i) => (
+              {restaurants.map((rest, i) => (
                 <Badge key={i} variant="outline" className="border-border">
                   {rest}
                 </Badge>
@@ -111,7 +115,7 @@ export function AnalysisViewer({ uploadResult }: AnalysisViewerProps) {
           </CardHeader>
           <CardContent>
             <ul className="space-y-1">
-              {analysis.culturalNotes.map((note, i) => (
+              {culturalNotes.map((note, i) => (
                 <li key={i} className="text-xs text-muted-foreground flex items-start">
                   <span className="mr-1 mt-0.5">•</span> {note}
                 </li>

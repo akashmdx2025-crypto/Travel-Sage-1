@@ -168,6 +168,51 @@ function jsonFromText<T>(text: string, fallback: T): T {
   }
 }
 
+function stringArray(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value
+      .flatMap((item) => stringArray(item))
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+  if (typeof value === "string") {
+    return value
+      .split(/\n|;|,(?=\s+[A-Z])/)
+      .map((item) => item.replace(/^[-•\d.)\s]+/, "").trim())
+      .filter(Boolean);
+  }
+  if (value && typeof value === "object") {
+    return Object.values(value)
+      .flatMap((item) => stringArray(item))
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+  return [];
+}
+
+function stringValue(value: unknown, fallback: string) {
+  if (typeof value === "string" && value.trim()) return value.trim();
+  if (Array.isArray(value)) return value.map((item) => String(item)).join(", ");
+  if (value && typeof value === "object") return Object.values(value).map((item) => String(item)).join(", ");
+  return fallback;
+}
+
+function normalizeAnalysis(value: unknown, fallback: DestinationAnalysis): DestinationAnalysis {
+  const raw = value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+  return {
+    destinationName: stringValue(raw.destinationName, fallback.destinationName),
+    country: stringValue(raw.country, fallback.country),
+    flagEmoji: stringValue(raw.flagEmoji, fallback.flagEmoji),
+    attractions: stringArray(raw.attractions).length ? stringArray(raw.attractions) : fallback.attractions,
+    restaurants: stringArray(raw.restaurants).length ? stringArray(raw.restaurants) : fallback.restaurants,
+    activities: stringArray(raw.activities).length ? stringArray(raw.activities) : fallback.activities,
+    priceRanges: stringArray(raw.priceRanges).length ? stringArray(raw.priceRanges) : fallback.priceRanges,
+    climate: stringValue(raw.climate, fallback.climate),
+    culturalNotes: stringArray(raw.culturalNotes).length ? stringArray(raw.culturalNotes) : fallback.culturalNotes,
+    summary: stringValue(raw.summary, fallback.summary),
+  };
+}
+
 async function callOpenAi(messages: ChatMessage[], endpoint: string, options?: { json?: boolean; guardrailPassed?: boolean }) {
   const started = Date.now();
   const promptText = messages.map((message) => message.content).join("\n");
@@ -320,7 +365,7 @@ router.post("/travelsage/upload", async (req, res) => {
       "upload-analysis",
       { json: true, guardrailPassed: true },
     );
-    const analysis = jsonFromText<DestinationAnalysis>(ai.content, fallback);
+    const analysis = normalizeAnalysis(jsonFromText<unknown>(ai.content, fallback), fallback);
     const chunks = chunkText(text).map((chunk, index) => ({
       id: `chunk-${index + 1}`,
       text: chunk,
